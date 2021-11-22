@@ -138,13 +138,23 @@ class WebPackageRulesTest extends TestCase
 
     /**
      * @covers ::createWebPackageWithContentEncoding
+     * @covers \davekok\webpackage\WebPackageFormatter::length
+     * @covers \davekok\webpackage\WebPackageFormatter::lengthBuildDate
+     * @covers \davekok\webpackage\WebPackageFormatter::lengthContentEncoding
+     * @covers \davekok\webpackage\WebPackageFormatter::lengthEndOfFiles
+     * @covers \davekok\webpackage\WebPackageFormatter::lengthSignature
      */
     public function testCreateWebPackageWithContentEncoding(): void
     {
         $buildDate       = new DateTime();
         $contentEncoding = "br";
         $files           = [];
-        $webpackage      = new WebPackage(buildDate: $buildDate, contentEncoding: $contentEncoding, files: $files);
+        $webpackage      = new WebPackage(
+            buildDate: $buildDate,
+            contentEncoding: $contentEncoding,
+            files: $files,
+            length: 33
+        );
         $parser          = $this->createMock(Parser::class);
         $activity        = $this->createMock(Activity::class);
         $tokens          = [

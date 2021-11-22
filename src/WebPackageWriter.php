@@ -29,6 +29,7 @@ enum WebPackageWriter_State
 
 class WebPackageWriter implements Writer
 {
+    private WebPackageWriter_State $state;
     private WebPackage $webpackage;
     private ArrayIterator $files;
     private File $file;
@@ -36,12 +37,12 @@ class WebPackageWriter implements Writer
 
     public function __construct(
         private Activity $activity,
-        private WebPackageWriter_State $state  = WebPackageWriter_State::SIGNATURE,
         private WebPackageFormatter $formatter = new WebPackageFormatter,
     ) {}
 
     public function send(WebPackage $webpackage): void
     {
+        $this->state = WebPackageWriter_State::SIGNATURE;
         $this->webpackage = $webpackage;
         $this->activity->addWrite($this);
     }
@@ -82,7 +83,7 @@ class WebPackageWriter implements Writer
                     }
                     $this->state = WebPackageWriter_State::FILE;
                 case WebPackageWriter_State::FILE:
-                    $this->file = $this->files->current();
+                    $this->file  = $this->files->current();
                     $this->state = WebPackageWriter_State::FILE_NAME;
                 case WebPackageWriter_State::FILE_NAME:
                     $fileName = $this->formatter->formatFileName($this->file->fileName);
@@ -116,7 +117,7 @@ class WebPackageWriter implements Writer
                     }
                     $buffer->add($startContent);
                     $this->offset = 0;
-                    $this->state = WebPackageWriter_State::CONTENT_1;
+                    $this->state  = WebPackageWriter_State::CONTENT_1;
                 case WebPackageWriter_State::CONTENT_1:
                     if ($buffer->addChunk($this->offset, $this->file->content)) {
                         $this->activity->repeat();

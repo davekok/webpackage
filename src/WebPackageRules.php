@@ -51,6 +51,11 @@ class WebPackageRules
             buildDate:       $tokens[1]->value,
             contentEncoding: $tokens[2]->value,
             files:           $tokens[3]->value,
+            length:          (new WebPackageFormatter)->length(
+                buildDate:       $tokens[1]->value,
+                contentEncoding: $tokens[2]->value,
+                files:           $tokens[3]->value,
+            ),
         ));
     }
 
@@ -60,6 +65,10 @@ class WebPackageRules
         return $this->parser->createToken("webpackage", new WebPackage(
             buildDate:       $tokens[1]->value,
             contentEncoding: $tokens[2]->value,
+            length:          (new WebPackageFormatter)->length(
+                buildDate:       $tokens[1]->value,
+                contentEncoding: $tokens[2]->value,
+            ),
         ));
     }
 
@@ -68,6 +77,9 @@ class WebPackageRules
     {
         return $this->parser->createToken("webpackage", new WebPackage(
             buildDate: $tokens[1]->value,
+            length:    (new WebPackageFormatter)->length(
+                buildDate: $tokens[1]->value,
+            ),
         ));
     }
 

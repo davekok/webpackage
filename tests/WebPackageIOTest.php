@@ -20,14 +20,23 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \davekok\webpackage\WebPackageFormatter::format
- * @covers \davekok\webpackage\WebPackageFormatter::formatSignature
  * @covers \davekok\webpackage\WebPackageFormatter::formatBuildDate
  * @covers \davekok\webpackage\WebPackageFormatter::formatContentEncoding
- * @covers \davekok\webpackage\WebPackageFormatter::formatFileName
- * @covers \davekok\webpackage\WebPackageFormatter::formatContentType
  * @covers \davekok\webpackage\WebPackageFormatter::formatContentLength
- * @covers \davekok\webpackage\WebPackageFormatter::formatStartContent
+ * @covers \davekok\webpackage\WebPackageFormatter::formatContentType
  * @covers \davekok\webpackage\WebPackageFormatter::formatEndOfFiles
+ * @covers \davekok\webpackage\WebPackageFormatter::formatFileName
+ * @covers \davekok\webpackage\WebPackageFormatter::formatSignature
+ * @covers \davekok\webpackage\WebPackageFormatter::formatStartContent
+ * @covers \davekok\webpackage\WebPackageFormatter::length
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthBuildDate
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthContentEncoding
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthContentLength
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthContentType
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthEndOfFiles
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthFileName
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthSignature
+ * @covers \davekok\webpackage\WebPackageFormatter::lengthStartContent
  * @covers \davekok\webpackage\WebPackageReader::__construct
  * @covers \davekok\webpackage\WebPackageWriter::__construct
  * @uses \davekok\webpackage\File
@@ -73,7 +82,19 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
                             contentLength: 35,
                             content:       "*{margin:0;paddding:0;border:none;}"
                         )
-                    ]
+                    ],
+                    length: 1 + 7    // signature
+                        + 1 + 20     // datetime
+                        + 1 + 2      // content encoding
+                            + 1 + 1  // file name
+                            + 1 + 27 // content type
+                            + 1 + 3  // content length
+                            + 1 + 28 // content
+                            + 1 + 10 // file name
+                            + 1 + 38 // content type
+                            + 1 + 3  // content length
+                            + 1 + 35 // content
+                        + 1          // end of files
                 )
             ],
             [
@@ -98,37 +119,72 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
                             contentType:   "image/png",
                             contentLength: 2,
                             content:       "\x00\x00"
-                        )
-                    ]
+                        ),
+                    ],
+                    length: 1 + 7    // signature
+                        + 1 + 25     // datetime
+                        + 1 + 2      // content encoding
+                            + 1 + 1  // file name
+                            + 1 + 29 // content type
+                            + 1 + 3  // content length
+                            + 1 + 28 // content
+                            + 1 + 6  // file name
+                            + 1 + 16 // content type
+                            + 1 + 3  // content length
+                            + 1 + 16 // content
+                            + 1 + 8  // file name
+                            + 1 + 9  // content type
+                            + 1 + 3  // content length
+                            + 1 + 2  // content
+                        + 1          // end of files
                 )
             ],
             [
                 new WebPackage(
                     buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "br",
+                    length: 1 + 7 // signature
+                        + 1 + 25  // datetime
+                        + 1 + 2   // content encoding
+                        + 1       // end of files
                 )
             ],
             [
                 new WebPackage(
                     buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "compress",
+                    length: 1 + 7 // signature
+                        + 1 + 25  // datetime
+                        + 1 + 8   // content encoding
+                        + 1       // end of files
                 )
             ],
             [
                 new WebPackage(
                     buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "deflate",
+                    length: 1 + 7 // signature
+                        + 1 + 25  // datetime
+                        + 1 + 7   // content encoding
+                        + 1       // end of files
                 )
             ],
             [
                 new WebPackage(
                     buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "gzip",
+                    length: 1 + 7 // signature
+                        + 1 + 25  // datetime
+                        + 1 + 4   // content encoding
+                        + 1       // end of files
                 )
             ],
             [
                 new WebPackage(
                     buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    length: 1 + 7 // signature
+                        + 1 + 25  // datetime
+                        + 1       // end of files
                 )
             ],
         ];
