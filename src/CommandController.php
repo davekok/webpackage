@@ -46,21 +46,27 @@ class CommandController
 
     public function handleBuildOptions(array $args, int $offset = 0): noreturn
     {
+        $out      = null;
+        $strip    = null;
+        $encoding = null;
+        $files    = [];
+
         $argc = count($args);
         if ($argc === $offset) {
             $this->printBuildHelp();
         }
         for ($i = $offset; $i < $argc; ++$i) {
-            if ($args[$i][0] === "-") {
-                if ($args[$i][1] !== "-") {
-                    $argl = strlen($args[$i]);
+            $c = $i;
+            if ($args[$c][0] === "-") {
+                if ($args[$c][1] !== "-") {
+                    $argl = strlen($args[$c]);
                     for ($j = 1; $j < $argl; ++$j) {
-                        switch ($args[$i][$j]) {
+                        switch ($args[$c][$j]) {
                             case "o":
-                                $out = $args[$i+1];
+                                $out = $args[++$i];
                                 break;
                             case "s":
-                                $strip = $args[$i+1];
+                                $strip = $args[++$i];
                                 break;
                             case "g":
                                 $encoding = "gzip";
@@ -81,42 +87,37 @@ class CommandController
                     }
                     continue;
                 }
-                if ($args[$i] === "--out") {
-                    $out = $args[$i+1];
+                if ($args[$c] === "--out") {
+                    $out = $args[$c+1];
                     continue;
                 }
-                if ($args[$i] === "--strip") {
-                    $strip = $args[$i+1];
+                if ($args[$c] === "--strip") {
+                    $strip = $args[$c+1];
                     continue;
                 }
-                if ($args[$i] === "--gzip") {
+                if ($args[$c] === "--gzip") {
                     $encoding = "gzip";
                     continue;
                 }
-                if ($args[$i] === "--compress") {
+                if ($args[$c] === "--compress") {
                     $encoding = "compress";
                     continue;
                 }
-                if ($args[$i] === "--deflate") {
+                if ($args[$c] === "--deflate") {
                     $encoding = "deflate";
                     continue;
                 }
-                if ($args[$i] === "--br") {
+                if ($args[$c] === "--br") {
                     $encoding = "br";
                     continue;
                 }
-                if ($args[$i] === "--help") {
+                if ($args[$c] === "--help") {
                     $this->printBuildHelp();
                 }
-                $files[] = $args[$i];
             }
+            $files[] = realpath($args[$c]);
         }
-        (new BuildCommand(
-            out:      $out      ?? null,
-            strip:    $strip    ?? null,
-            encoding: $encoding ?? null,
-            files:    $files    ?? [],
-        ))->build();
+        (new BuildCommand(out: $out, strip: $strip, encoding: $encoding, files: $files))->build();
         exit();
     }
 

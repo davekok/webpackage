@@ -35,9 +35,6 @@ function volumes() {
                 VOLUMES+=("-v" "./docs/coverage:/app/docs/coverage:rw")
                 ;;
             dependencies)
-                if [ -d "../log/src" ]; then
-                    VOLUMES+=("-v" "../log/src:/app/vendor/davekok/log/src:ro")
-                fi
                 if [ -d "../stream/src" ]; then
                     VOLUMES+=("-v" "../stream/src:/app/vendor/davekok/stream/src:ro")
                 fi
@@ -100,7 +97,8 @@ case "${1:-}" in
         ;;
 
     run)
-        echo "This is a library and can't be run."
+        shift
+        podman run -it --rm -w /app "$ID:latest" $*
         ;;
 
     status | add | commit | pull | push | stash | diff)
