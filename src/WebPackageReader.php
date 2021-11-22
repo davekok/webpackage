@@ -166,7 +166,7 @@ class WebPackageReader implements Reader
                                 $dateString = urlencode($dateString);
                                 throw new ReaderException("Invalid date: $dateString");
                             }
-                            $this->parser->pushToken("build-date", $date);
+                            $this->parser->pushToken("build-date", $dateString);
                             continue 2;
                         }
                         $buffer->next();
@@ -184,7 +184,7 @@ class WebPackageReader implements Reader
                             throw new ReaderException("Invalid date: $dateString");
                         }
                         $this->state = WebPackageReader_State::START;
-                        $this->parser->pushToken("build-date", $date);
+                        $this->parser->pushToken("build-date", $dateString);
                         continue 2;
                     case WebPackageReader_State::CONTENT_ENCODING:
                         switch ($buffer->current()) {

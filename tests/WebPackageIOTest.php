@@ -67,7 +67,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
         return [
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23Z"),
+                    buildDate:       "2021-11-19T16:41:23Z",
                     contentEncoding: "br",
                     files: [
                         "/" => new File(
@@ -99,7 +99,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    buildDate:       "2021-11-19T16:41:23+02:00",
                     contentEncoding: "br",
                     files: [
                         "/" => new File(
@@ -141,7 +141,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    buildDate:       "2021-11-19T16:41:23+02:00",
                     contentEncoding: "br",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -151,7 +151,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    buildDate:       "2021-11-19T16:41:23+02:00",
                     contentEncoding: "compress",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -161,7 +161,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    buildDate:       "2021-11-19T16:41:23+02:00",
                     contentEncoding: "deflate",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -171,7 +171,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    buildDate:       "2021-11-19T16:41:23+02:00",
                     contentEncoding: "gzip",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -181,7 +181,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
+                    buildDate: "2021-11-19T16:41:23+02:00",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
                         + 1       // end of files

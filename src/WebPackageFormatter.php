@@ -27,7 +27,7 @@ class WebPackageFormatter
             . $this->formatEndOfFiles();
     }
 
-    public function length(DateTime $buildDate, string|null $contentEncoding = null, array $files = []): int
+    public function length(DateTime|string $buildDate, string|null $contentEncoding = null, array $files = []): int
     {
         return $this->lengthSignature()
             + $this->lengthBuildDate($buildDate)
@@ -55,13 +55,19 @@ class WebPackageFormatter
         return 8;
     }
 
-    public function formatBuildDate(DateTime $buildDate = new DateTime()): string
+    public function formatBuildDate(DateTime|string $buildDate = new DateTime()): string
     {
+        if (is_string($buildDate)) {
+            return chr(WebPackageToken::BUILD_DATE->value) . $buildDate;
+        }
         return chr(WebPackageToken::BUILD_DATE->value) . str_replace("+00:00", "Z", $buildDate->format("c"));
     }
 
-    public function lengthBuildDate(DateTime $buildDate = new DateTime()): int
+    public function lengthBuildDate(DateTime|string $buildDate = new DateTime()): int
     {
+        if (is_string($buildDate)) {
+            return 1 + strlen($buildDate);
+        }
         return 1 + strlen(str_replace("+00:00", "Z", $buildDate->format("c")));
     }
 
