@@ -6,15 +6,17 @@ namespace davekok\webpackage;
 
 use Exception;
 use finfo;
-use Traversable;
 
 class BuildCommand
 {
     public function __construct(
-        private array       $files,
-        private string|null $encoding,
-                string|null $out,
-                string|null $strip,
+        private WebPackageClientKey $webPackageClientKey,
+        private string              $domain,
+        private string|null         $certificate,
+        private array               $files,
+        private string|null         $encoding,
+                string|null         $out,
+                string|null         $strip,
     ) {
         $this->out = $out ?? getcwd() ?: throw new Exception("Unable to detect current working directory.");
         if (is_dir($this->out) === true) {
@@ -28,23 +30,36 @@ class BuildCommand
 
     public function build(): void
     {
-        $handle    = fopen($this->out, "xb") ?: throw new Exception("Unable to create file '{$this->out}'.");
         $formatter = new WebPackageFormatter();
-        fwrite($handle, $formatter->formatSignature());
-        fwrite($handle, $formatter->formatBuildDate());
-        fwrite($handle, $formatter->formatContentEncoding($this->encoding));
-        foreach ($this->iterateFiles() as [$fileName, $contentType, $contentLength, $content]) {
-            fwrite($handle, $formatter->formatFileName($fileName));
-            fwrite($handle, $formatter->formatContentType($contentType));
-            fwrite($handle, $formatter->formatContentLength($contentLength));
-            fwrite($handle, $formatter->formatStartContent());
+        $buildDate = new DateTime();
+        $files     = iterator_to_array($this->iterateFiles());
+
+        $hash = new WebPackageHash($formatter);
+        $hash->addHead($this->domain, $buildDate, $this->encoding)
+        foreach ($files as [$fileName, $contentType, $contentHash, $contentLength, $content]) {
+            $hash->addFile($fileName, $contentType, $contentHash, $contentLength, $content);
+        }
+        $hash->addEndOfFiles();
+
+        $handle = fopen($this->out, "xb") ?: throw new Exception("Unable to create file '{$this->out}'.");
+        fwrite($handle, $formatter->formatHead(
+            hash:            $this->webPackageClientKey->encrypt($hash),
+            domain:          $this->domain,
+            buildDate:       $buildDate,
+            contentEncoding: $this->encoding,
+            certificate:     $this->certificate === null ? null : $this->webPackageClientKey->encrypt(
+                file_get_contents($this->certificate) ?: throw new Exception("Unable to read {$this->certificate}")
+            )
+        ));
+        foreach ($files as [$fileName, $contentType, $contentHash, $contentLength, $content]) {
+            fwrite($handle, $formatter->formatFileHead($fileName, $contentType, $contentHash, $contentLength, $content));
+            fseek($content, 0);
             stream_copy_to_stream($content, $handle);
         }
         fwrite($handle, $formatter->formatEndOfFiles());
-        fclose($handle);
     }
 
-    private function iterateFiles(): Traversable
+    private function iterateFiles(): iterable
     {
         foreach ($this->files as $file) {
             $file = realpath($file);
@@ -101,10 +116,11 @@ class BuildCommand
         } else if (str_starts_with($contentType, "text/")) {
             $contentType .= "; charset=" . $finfo->file($file, FILEINFO_MIME_ENCODING);
         }
-        $content = fopen($file, "rb");
+        $contentHash = hash_file("sha3-256", $file, binary: true);
+        $content     = fopen($file, "rb");
         if ($content === false) {
             throw new Exception("Invalid path or unreadable file: $file");
         }
-        return [$fileName, $contentType, $contentLength, $content];
+        return [$fileName, $contentType, $contentHash, $contentLength, $content];
     }
 }

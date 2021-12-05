@@ -86,8 +86,7 @@ class WebPackageRulesTest extends TestCase
                     precedence: 0,
                     reduceMethod: new ReflectionMethod('davekok\webpackage\WebPackageRules', 'createFile'),
                 ),
-            ],
-            solutionMethod: new ReflectionMethod('davekok\webpackage\WebPackageRules', 'solution'),
+            ]
         )
     ) {
         parent::__construct();
@@ -99,18 +98,6 @@ class WebPackageRulesTest extends TestCase
             $this->rules,
             (new RulesFactory)->createRules(new ReflectionClass(WebPackageRules::class)),
         );
-    }
-
-    /**
-     * @covers ::solution
-     */
-    public function testSolution(): void
-    {
-        $value    = $this->createMock(WebPackage::class);
-        $parser   = $this->createMock(Parser::class);
-        $activity = $this->createMock(Activity::class);
-        $activity->expects(static::once())->method('push')->with($value);
-        (new WebPackageRules($parser, $activity))->solution($value);
     }
 
     /**

@@ -9,66 +9,101 @@ use Exception;
 
 class WebPackageFormatter
 {
-    public function format(WebPackage $wpk): string
-    {
-        return $this->formatSignature()
-            . $this->formatBuildDate($wpk->buildDate)
-            . $this->formatContentEncoding($wpk->contentEncoding)
-            . array_reduce(
-                $wpk->files,
-                fn(string $prev, File $file) => $prev
-                    . $this->formatFileName($file->fileName)
-                    . $this->formatContentType($file->contentType)
-                    . $this->formatContentLength($file->contentLength)
-                    . $this->formatStartContent()
-                    . $file->content,
-                ""
-              )
-            . $this->formatEndOfFiles();
+    public function formatHead(
+        string      $hash,
+        string      $domain,
+        DateTime    $buildDate,
+        string|null $certificate,
+        string|null $contentEncoding
+    ): string {
+        return $this->formatSignature($hash)
+            . $this->formatDomain($domain)
+            . $this->formatBuildDate($buildDate)
+            . $this->formatCertificate($certificate)
+            . $this->formatContentEncoding($contentEncoding);
     }
 
-    public function length(DateTime|string $buildDate, string|null $contentEncoding = null, array $files = []): int
-    {
-        return $this->lengthSignature()
+    public function lengthHead(
+        string      $hash,
+        string      $domain,
+        DateTime    $buildDate,
+        string|null $certificate,
+        string|null $contentEncoding
+    ): int {
+        return $this->lengthSignature($hash)
+            + $this->lengthDomain($domain)
             + $this->lengthBuildDate($buildDate)
-            + $this->lengthContentEncoding($contentEncoding)
-            + array_reduce(
-                $files,
-                fn(string $prev, File $file) => $prev
-                    + $this->lengthFileName($file->fileName)
-                    + $this->lengthContentType($file->contentType)
-                    + $this->lengthContentLength($file->contentLength)
-                    + $this->lengthStartContent()
-                    + strlen($file->content),
-                0
-              )
-            + $this->lengthEndOfFiles();
+            + $this->lengthCertificate($certificate)
+            + $this->lengthContentEncoding($contentEncoding);
     }
 
-    public function formatSignature(): string
-    {
-        return chr(WebPackageToken::SIGNATURE->value) . "WPK\x0D\x0A\x1A\x0A";
+    public function formatFileHead(
+        string $fileName,
+        string $contentType,
+        string $contentHash,
+        string $contentLength,
+    ): string {
+        return $this->formatFileName($fileName)
+            + $this->formatContentType($contentType)
+            + $this->formatContentHash($contentHash)
+            + $this->formatContentLength($contentLength)
+            + $this->formatStartContent();
     }
 
-    public function lengthSignature(): int
-    {
-        return 8;
+    public function lengthFile(
+        string $fileName,
+        string $contentType,
+        string $contentHash,
+        string $contentLength,
+    ): int {
+        return $this->lengthFileName($fileName)
+            + $this->lengthContentType($contentType)
+            + $this->lengthContentHash($contentHash)
+            + $this->lengthContentLength($contentLength)
+            + $this->lengthStartContent()
+            + $contentLength;
     }
 
-    public function formatBuildDate(DateTime|string $buildDate = new DateTime()): string
+    public function formatSignature(string $hash): string
     {
-        if (is_string($buildDate)) {
-            return chr(WebPackageToken::BUILD_DATE->value) . $buildDate;
-        }
-        return chr(WebPackageToken::BUILD_DATE->value) . str_replace("+00:00", "Z", $buildDate->format("c"));
+        return chr(WebPackageToken::SIGNATURE->value) . "WPK\x0D\x0A\x1A\x0A" . chr(strlen($hash)) . $hash;
     }
 
-    public function lengthBuildDate(DateTime|string $buildDate = new DateTime()): int
+    public function lengthSignature(string $hash): int
     {
-        if (is_string($buildDate)) {
-            return 1 + strlen($buildDate);
-        }
-        return 1 + strlen(str_replace("+00:00", "Z", $buildDate->format("c")));
+        return 9 + strlen($hash);
+    }
+
+    public function formatDomain(string $domain): string
+    {
+        return chr(WebPackageToken::DOMAIN->value) . $domain;
+    }
+
+    public function lengthDomain(string $domain): int
+    {
+        return 1 + strlen($domain);
+    }
+
+    public function formatCertificate(string $certificate): string
+    {
+        $length = strlen($certificate);
+        return chr(WebPackageToken::CERTIFICATE->value) . chr(($length >> 8) & 0xFF) . chr($length & 0xFF) . $certificate;
+    }
+
+    public function lengthCertificate(string $certificate): int
+    {
+        return 3 + strlen($certificate);
+    }
+
+    public function formatBuildDate(DateTime $buildDate = new DateTime()): string
+    {
+        return chr(WebPackageToken::BUILD_DATE->value)
+            . str_replace("+00:00", "Z", (clone $buildDate)->setTimezone(new DateTimeZone("UTC"))->format("c"));
+    }
+
+    public function lengthBuildDate(DateTime $buildDate = new DateTime()): int
+    {
+        return 1 + 20;
     }
 
     public function formatContentEncoding(string|null $contentEncoding): string
@@ -112,6 +147,16 @@ class WebPackageFormatter
     public function lengthContentType(string $contentType): int
     {
         return 1 + strlen($contentType);
+    }
+
+    public function formatContentHash(string $hash): string
+    {
+        return chr(WebPackageToken::CONTENT_HASH->value) . $hash;
+    }
+
+    public function lengthContentHash(string $hash): int
+    {
+        return 1 + strlen($hash);
     }
 
     public function formatContentLength(int $contentLength): string

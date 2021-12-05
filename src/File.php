@@ -9,7 +9,8 @@ class File
     public function __construct(
         public readonly string $fileName,
         public readonly string $contentType,
+        public readonly string $contentHash,   // 256-bit binary string
         public readonly int    $contentLength,
-        public readonly string $content,
+        public readonly mixed  $content,
     ) {}
 }

@@ -6,15 +6,18 @@ namespace davekok\webpackage;
 
 use DateTime;
 use davekok\lalr1\Parser;
-use davekok\stream\Activity;
+use davekok\stream\Action;
 use davekok\stream\Reader;
-use davekok\stream\ReaderBuffer;
+use davekok\stream\ReadBuffer;
 use davekok\stream\ReaderException;
+use Throwable;
 
 enum WebPackageReader_State
 {
     case START;
     case SIGNATURE;
+    case DOMAIN;
+    case CERTIFICATE;
     case BUILD_DATE;
     case BUILD_DATE_1;
     case CONTENT_ENCODING;
@@ -39,30 +42,13 @@ enum WebPackageReader_State
 
 class WebPackageReader implements Reader
 {
-    private int $contentLength = 0;
+    private WebPackageReader_State $state         = WebPackageReader_State::START;
+    private int                    $contentLength = 0;
 
-    public function __construct(
-        private Parser $parser,
-        private Activity $activity,
-        private WebPackageReader_State $state = WebPackageReader_State::START,
-    ) {}
-
-    public function receive(WebPackageHandler $handler): void
-    {
-        $this->activity
-            ->addRead($this)
-            ->add($handler->handleWebPackage(...));
-    }
-
-    public function reset(ReaderBuffer $buffer): void
-    {
-        $buffer->reset();
-        $this->parser->reset();
-    }
+    public function __construct(private readonly Parser $parser) {}
 
     /**
-     * webpackage                    = signature build-date files end-of-files ;
-     * webpackage                    = signature build-date content-encoding files end-of-files ;
+     * webpackage                    = signature domain? certificate build-date content-encoding? files end-of-files ;
      * files                         = files file ;
      * files                         = file ;
      * file                          = file-name content-type content-length content ;
@@ -71,7 +57,7 @@ class WebPackageReader implements Reader
      * end-of-files                  = "\x00" ;
      * build-date                    = "\x01" [0-9]{4} "-" ("0" [1-9] | "1" [0-2]) "-" ( "0" [1-9] | [1-2] [0-9] | "3" [0-1] )
      *                                     "T" ( [0-1] [0-9] | "2" [0-3] ) ":" ( [0-5] [0-9] ) ":" ( [0-5] [0-9] )
-     *                                     ( "Z" | ("+" | "-") [0-9]{2} ":" [0-9]{2} ) ;
+     *                                     "Z" ;
      * content-encoding              = "\x02" ( "gzip" | "compress" | "deflate" | "br" ) ;
      *
      * reserving \x02 - \x0F for future use
@@ -98,7 +84,7 @@ class WebPackageReader implements Reader
      * File names must be sorted in ascending order.
      * "/" is a valid file name.
      */
-    public function read(ReaderBuffer $buffer): void
+    public function read(ReadBuffer $buffer): mixed
     {
         try {
             while ($buffer->valid()) {
@@ -112,8 +98,15 @@ class WebPackageReader implements Reader
                             case WebPackageToken::END_OF_FILES->value:
                                 $buffer->next()->mark();
                                 $this->parser->pushToken("end-of-files");
-                                $this->parser->endOfTokens();
-                                return;
+                                return $this->parser->endOfTokens();
+                            case WebPackageToken::DOMAIN->value:
+                                $this->state = WebPackageReader_State::DOMAIN;
+                                $buffer->next()->mark();
+                                continue 3;
+                            case WebPackageToken::CERTIFICATE->value:
+                                $this->state = WebPackageReader_State::CERTIFICATE;
+                                $buffer->next()->mark();
+                                continue 3;
                             case WebPackageToken::BUILD_DATE->value:
                                 $this->state = WebPackageReader_State::BUILD_DATE;
                                 $buffer->next()->mark();
@@ -128,6 +121,10 @@ class WebPackageReader implements Reader
                                 continue 3;
                             case WebPackageToken::CONTENT_TYPE->value:
                                 $this->state = WebPackageReader_State::CONTENT_TYPE;
+                                $buffer->next()->mark();
+                                continue 3;
+                            case WebPackageToken::CONTENT_HASH->value:
+                                $this->state = WebPackageReader_State::CONTENT_HASH;
                                 $buffer->next()->mark();
                                 continue 3;
                             case WebPackageToken::CONTENT_LENGTH->value:
@@ -152,6 +149,28 @@ class WebPackageReader implements Reader
                             continue 2;
                         }
                         throw new ReaderException("Invalid signature");
+                    case WebPackageReader_State::DOMAIN:
+                        if ($buffer->valid(7) === false) {
+                            break 2;
+                        }
+                        $buffer->next(7);
+                        if ($buffer->equals("WPK\x0D\x0A\x1A\x0A") === true) {
+                            $this->state = WebPackageReader_State::START;
+                            $this->parser->pushToken("signature");
+                            continue 2;
+                        }
+                        throw new ReaderException("Invalid signature");
+                    case WebPackageReader_State::CERTIFICATE:
+                        if ($buffer->valid(7) === false) {
+                            break 2;
+                        }
+                        $buffer->next(7);
+                        if ($buffer->equals("WPK\x0D\x0A\x1A\x0A") === true) {
+                            $this->state = WebPackageReader_State::START;
+                            $this->parser->pushToken("signature");
+                            continue 2;
+                        }
+                        throw new ReaderException("Invalid signature");
                     case WebPackageReader_State::BUILD_DATE:
                         if ($buffer->valid(20) === false) {
                             break 2;
@@ -166,26 +185,10 @@ class WebPackageReader implements Reader
                                 $dateString = urlencode($dateString);
                                 throw new ReaderException("Invalid date: $dateString");
                             }
-                            $this->parser->pushToken("build-date", $dateString);
+                            $this->parser->pushToken("build-date", $date);
                             continue 2;
                         }
-                        $buffer->next();
-                        $this->state = WebPackageReader_State::BUILD_DATE_1;
-                        continue 2;
-                    case WebPackageReader_State::BUILD_DATE_1:
-                        if ($buffer->valid(5) === false) {
-                            break 2;
-                        }
-                        $buffer->next(5);
-                        $dateString = $buffer->getString();
-                        $date = date_create($dateString);
-                        if ($date === false) {
-                            $dateString = urlencode($dateString);
-                            throw new ReaderException("Invalid date: $dateString");
-                        }
-                        $this->state = WebPackageReader_State::START;
-                        $this->parser->pushToken("build-date", $dateString);
-                        continue 2;
+                        throw new ReaderException("Invalid date time");
                     case WebPackageReader_State::CONTENT_ENCODING:
                         switch ($buffer->current()) {
                             case 0x42: // B
@@ -459,6 +462,14 @@ class WebPackageReader implements Reader
                             $this->state = WebPackageReader_State::CONTENT_TYPE_3;
                             continue 2;
                         }
+                    case WebPackageReader_State::CONTENT_HASH:
+                        if ($buffer->valid(32) === false) {
+                            break 2;
+                        }
+                        $buffer->next(32);
+                        $this->state = WebPackageReader_State::CONTENT_LENGTH;
+                        $this->parser->pushToken("content-hash", $buffer->getString());
+                        continue 2;
                     case WebPackageReader_State::CONTENT_LENGTH:
                         $this->contentLength = $buffer->current() << 16;
                         $buffer->next();
@@ -485,19 +496,17 @@ class WebPackageReader implements Reader
                         continue 2;
                 }
             }
+
             if ($buffer->isLastChunk() === true) {
-                $this->parser->endOfTokens();
-            } else {
-                $this->activity->repeat();
+                return $this->parser->endOfTokens();
             }
-        } catch (ReaderException $e) {
-            $this->reset($buffer);
-            $this->activity->push($e);
+
+            return null;
+
         } catch (Throwable $e) {
-            $this->activity
-                ->clear()
-                ->addError($e)
-                ->addClose();
+            $buffer->reset();
+            $this->parser->reset();
+            throw $e;
         }
     }
 }

@@ -18,6 +18,8 @@ class CommandController
             switch ($args[$offset] ?? "") {
                 case "build":
                     $this->handleBuildOptions($args, $offset + 1);
+                case "install":
+                    $this->handleInstallOptions($args, $offset + 1);
                 case "help":
                     switch ($args[$offset + 1] ?? "") {
                         case "build":
@@ -39,6 +41,7 @@ class CommandController
 
             List of subcommands:
                 build      to build a webpackage
+                install    install webpackage
                 help       print this screen
 
             HELP);
@@ -48,6 +51,9 @@ class CommandController
     {
         $out      = null;
         $strip    = null;
+        $domain   = null;
+        $cert     = null;
+        $buildKey = null;
         $encoding = null;
         $files    = [];
 
@@ -68,17 +74,17 @@ class CommandController
                             case "s":
                                 $strip = $args[++$i];
                                 break;
-                            case "g":
-                                $encoding = "gzip";
+                            case "d":
+                                $domain = $args[++$i];
                                 break;
                             case "c":
-                                $encoding = "compress";
+                                $cert = $args[++$i];
                                 break;
-                            case "d":
-                                $encoding = "deflate";
+                            case "k":
+                                $key = $args[++$i];
                                 break;
-                            case "b":
-                                $encoding = "br";
+                            case "e":
+                                $encoding = $args[++$i];
                                 break;
                             case "h":
                             case "?":
@@ -88,27 +94,27 @@ class CommandController
                     continue;
                 }
                 if ($args[$c] === "--out") {
-                    $out = $args[$c+1];
+                    $out = $args[++$i];
                     continue;
                 }
                 if ($args[$c] === "--strip") {
-                    $strip = $args[$c+1];
+                    $strip = $args[++$i];
                     continue;
                 }
-                if ($args[$c] === "--gzip") {
-                    $encoding = "gzip";
+                if ($args[$c] === "--domain") {
+                    $domain = $args[++$i];
                     continue;
                 }
-                if ($args[$c] === "--compress") {
-                    $encoding = "compress";
+                if ($args[$c] === "--cert") {
+                    $cert = $args[++$i];
                     continue;
                 }
-                if ($args[$c] === "--deflate") {
-                    $encoding = "deflate";
+                if ($args[$c] === "--key") {
+                    $key = new WebPackageBuildKey($args[++$i]);
                     continue;
                 }
-                if ($args[$c] === "--br") {
-                    $encoding = "br";
+                if ($args[$c] === "--encoding") {
+                    $encoding = $args[++$i];
                     continue;
                 }
                 if ($args[$c] === "--help") {
@@ -117,7 +123,15 @@ class CommandController
             }
             $files[] = realpath($args[$c]);
         }
-        (new BuildCommand(out: $out, strip: $strip, encoding: $encoding, files: $files))->build();
+        (new BuildCommand(
+            buildKey:    $buildKey ?? new WebPackageBuildKey(),
+            domain:      $domain,
+            certificate: $cert,
+            encoding:    $encoding,
+            out:         $out,
+            strip:       $strip,
+            files:       $files,
+        ))->build();
         exit();
     }
 
@@ -133,10 +147,10 @@ class CommandController
             List of options:
               -o, --out FILE    the file to write the webpackage to
               -s, --strip PATH  strip PATH from files
+              -k, --key FILE    the webpackage build key (see server log)
+              -c, --cert FILE   add server certificate to webpackage
               -b, --br          use brotli algorithm to compress all files
-              -g, --gzip        use gzip algorithm to compress all files
               -d, --deflate     use deflate algorithm to compress all files
-              -c, --compress    use compress algorithm to compress all files
               -h, -?, --help    display this screen
 
             HELP);

@@ -44,7 +44,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \davekok\webpackage\WebPackageFactory
  * @uses \davekok\webpackage\WebPackageRules
  */
-class WebPackageIOTest extends TestCase implements WebPackageHandler
+class WebPackageIOTest extends TestCase
 {
     /**
      * @covers \davekok\webpackage\WebPackageReader::receive
@@ -53,12 +53,11 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
     {
         $activity = $this->createMock(Activity::class);
         $reader = (new WebPackageFactory)->createReader($activity);
-        $activity->expects(static::once())->method('addRead')->with($reader)->willReturn($activity);
-        $activity->expects(static::once())->method('add')->with($this->handleWebPackage(...))->willReturn($activity);
+        $activity->expects(static::once())->method('read')->with($reader, $this->handleWebPackage(...))->willReturn($activity);
         $reader->receive($this);
     }
 
-    public function handleWebPackage(WebPackage|ParserException|ReaderException $value): void
+    public function handleWebPackage(WebPackage|Throwable $value): void
     {
     }
 
@@ -67,7 +66,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
         return [
             [
                 new WebPackage(
-                    buildDate:       "2021-11-19T16:41:23Z",
+                    buildDate: new DateTime("2021-11-19T16:41:23Z"),
                     contentEncoding: "br",
                     files: [
                         "/" => new File(
@@ -99,7 +98,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate:       "2021-11-19T16:41:23+02:00",
+                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "br",
                     files: [
                         "/" => new File(
@@ -141,7 +140,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate:       "2021-11-19T16:41:23+02:00",
+                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "br",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -151,7 +150,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate:       "2021-11-19T16:41:23+02:00",
+                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "compress",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -161,7 +160,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate:       "2021-11-19T16:41:23+02:00",
+                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "deflate",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -171,7 +170,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate:       "2021-11-19T16:41:23+02:00",
+                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     contentEncoding: "gzip",
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
@@ -181,7 +180,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
             ],
             [
                 new WebPackage(
-                    buildDate: "2021-11-19T16:41:23+02:00",
+                    buildDate: new DateTime("2021-11-19T16:41:23+02:00"),
                     length: 1 + 7 // signature
                         + 1 + 25  // datetime
                         + 1       // end of files
@@ -197,7 +196,7 @@ class WebPackageIOTest extends TestCase implements WebPackageHandler
     public function testRead(WebPackage $webpackage): void
     {
         $activity = $this->createMock(Activity::class);
-        $reader   = (new WebPackageFactory)->createReader($activity);
+        $reader   = (new WebPackageFactory)->createReader();
         $content  = (new WebPackageFormatter)->format($webpackage);
         $third    = intdiv(strlen($content), 3);
         $buffer   = new StreamKernelReaderBuffer();

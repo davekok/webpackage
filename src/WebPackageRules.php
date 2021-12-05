@@ -4,83 +4,64 @@ declare(strict_types=1);
 
 namespace davekok\webpackage;
 
-use davekok\lalr1\attributes\{Rule,Solution,Symbol,Symbols};
-use davekok\lalr1\{Parser,ParserException,SymbolType,Token};
-use davekok\stream\{Activity,Url};
+use davekok\lalr1\attributes\{Rule,Symbol,Symbols};
+use davekok\lalr1\{Parser,ParserException,Rules,SymbolType,Token};
 use Throwable;
 
 #[Symbols(
-    new Symbol(SymbolType::ROOT, "webpackage"),
+    new Symbol(SymbolType::ROOT,   "webpackage"),
+    new Symbol(SymbolType::BRANCH, "files"),
     new Symbol(SymbolType::BRANCH, "files"),
     new Symbol(SymbolType::BRANCH, "file"),
-    new Symbol(SymbolType::LEAF, "signature"),
-    new Symbol(SymbolType::LEAF, "build-date"),
-    new Symbol(SymbolType::LEAF, "content-encoding"),
-    new Symbol(SymbolType::LEAF, "file-name"),
-    new Symbol(SymbolType::LEAF, "content-type"),
-    new Symbol(SymbolType::LEAF, "content-length"),
-    new Symbol(SymbolType::LEAF, "content"),
-    new Symbol(SymbolType::LEAF, "end-of-files"),
+    new Symbol(SymbolType::LEAF,   "signature"),
+    new Symbol(SymbolType::LEAF,   "domain"),
+    new Symbol(SymbolType::LEAF,   "build-date"),
+    new Symbol(SymbolType::LEAF,   "certificate"),
+    new Symbol(SymbolType::LEAF,   "content-encoding"),
+    new Symbol(SymbolType::LEAF,   "file-name"),
+    new Symbol(SymbolType::LEAF,   "content-type"),
+    new Symbol(SymbolType::LEAF,   "content-length"),
+    new Symbol(SymbolType::LEAF,   "content"),
+    new Symbol(SymbolType::LEAF,   "end-of-files"),
 )]
-class WebPackageRules
+class WebPackageRules implements Rules
 {
-    public function __construct(
-        private Parser $parser,
-        private Activity $activity,
-    ) {}
+    private readonly Parser $parser;
 
-    #[Solution]
-    public function solution(WebPackage|ParserException $value): void
+    public function setParser(Parser $parser): void
     {
-        $this->activity->push($value);
+        $this->parser = $parser;
     }
 
-    #[Rule("signature build-date files end-of-files")]
-    public function createWebPackageWithoutContentEncoding(array $tokens): Token
+    #[Rule("signature")]
+    public function start(array $tokens): Token
     {
-        return $this->parser->createToken("webpackage", new WebPackage(
-            buildDate: $tokens[1]->value,
-            files:     $tokens[2]->value,
-        ));
+        return $this->parser->createToken("webpackage", [
+            "signature"  => $tokens[0]->value,
+            "domain"     => $tokens[1]->value,
+            "build-date" => $tokens[1]->value,
+        ]);
     }
 
-    #[Rule("signature build-date content-encoding files end-of-files")]
-    public function createWebPackageWithContentEncoding(array $tokens): Token
+    #[Rule("webpackage certificate")]
+    public function addCertificate(array $tokens): Token
     {
-        return $this->parser->createToken("webpackage", new WebPackage(
-            buildDate:       $tokens[1]->value,
-            contentEncoding: $tokens[2]->value,
-            files:           $tokens[3]->value,
-            length:          (new WebPackageFormatter)->length(
-                buildDate:       $tokens[1]->value,
-                contentEncoding: $tokens[2]->value,
-                files:           $tokens[3]->value,
-            ),
-        ));
+        $tokens[0]->value["certificate"] = $tokens[1]->value;
+        return $tokens[0];
     }
 
-    #[Rule("signature build-date content-encoding end-of-files")]
-    public function createWebPackageWithContentEncodingNoFiles(array $tokens): Token
+    #[Rule("webpackage content-encoding")]
+    public function addContentEncoding(array $tokens): Token
     {
-        return $this->parser->createToken("webpackage", new WebPackage(
-            buildDate:       $tokens[1]->value,
-            contentEncoding: $tokens[2]->value,
-            length:          (new WebPackageFormatter)->length(
-                buildDate:       $tokens[1]->value,
-                contentEncoding: $tokens[2]->value,
-            ),
-        ));
+        $tokens[0]->value["content-encoding"] = $tokens[1]->value;
+        return $tokens[0];
     }
 
-    #[Rule("signature build-date end-of-files")]
-    public function createWebPackageEmpty(array $tokens): Token
+    #[Rule("webpackage files end-of-files")]
+    public function addFiles(array $tokens): Token
     {
-        return $this->parser->createToken("webpackage", new WebPackage(
-            buildDate: $tokens[1]->value,
-            length:    (new WebPackageFormatter)->length(
-                buildDate: $tokens[1]->value,
-            ),
-        ));
+        $tokens[0]->value["files"] = $tokens[1]->value;
+        return $tokens[0];
     }
 
     #[Rule("file")]
@@ -96,14 +77,15 @@ class WebPackageRules
         return $tokens[0];
     }
 
-    #[Rule("file-name content-type content-length content")]
+    #[Rule("file-name content-type content-hash content-length content")]
     public function createFile(array $tokens): Token
     {
         return $this->parser->createToken("file", new File(
             fileName:      $tokens[0]->value,
             contentType:   $tokens[1]->value,
-            contentLength: $tokens[2]->value,
-            content:       $tokens[3]->value,
+            contentHash:   $tokens[2]->value,
+            contentLength: $tokens[3]->value,
+            content:       $tokens[4]->value,
         ));
     }
 }
