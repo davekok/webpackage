@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace davekok\webpackage\tests;
 
 use DateTime;
-use davekok\lalr1\ParserException;
-use davekok\stream\Activity;
-use davekok\stream\ReaderException;
-use davekok\stream\StreamKernelReaderBuffer;
-use davekok\stream\WriterBuffer;
+use davekok\parser\ParserException;
+use davekok\kernel\Activity;
+use davekok\kernel\ReaderException;
+use davekok\kernel\ReadeBuffer;
+use davekok\kernel\WriteBuffer;
 use davekok\webpackage\File;
 use davekok\webpackage\WebPackage;
 use davekok\webpackage\WebPackageFactory;

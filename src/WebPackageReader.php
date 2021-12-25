@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace davekok\webpackage;
 
 use DateTime;
-use davekok\lalr1\Parser;
-use davekok\stream\Action;
-use davekok\stream\Reader;
-use davekok\stream\ReadBuffer;
-use davekok\stream\ReaderException;
+use davekok\parser\Parser;
+use davekok\kernel\Reader;
+use davekok\kernel\ReadBuffer;
+use davekok\kernel\ReaderException;
 use Throwable;
 
 enum WebPackageReader_State

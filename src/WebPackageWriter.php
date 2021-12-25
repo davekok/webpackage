@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace davekok\webpackage;
 
-use davekok\stream\Action;
-use davekok\stream\Writer;
-use davekok\stream\WriteBuffer;
+use davekok\kernel\Action;
+use davekok\kernel\Writer;
+use davekok\kernel\WriteBuffer;
 use ArrayIterator;
 
 enum WebPackageWriter_State

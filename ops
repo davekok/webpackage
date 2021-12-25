@@ -35,11 +35,14 @@ function volumes() {
                 VOLUMES+=("-v" "./docs/coverage:/app/docs/coverage:rw")
                 ;;
             dependencies)
-                if [ -d "../stream/src" ]; then
-                    VOLUMES+=("-v" "../stream/src:/app/vendor/davekok/stream/src:ro")
+                if [ -d "../system/src" ]; then
+                    VOLUMES+=("-v" "../system/src:/app/vendor/davekok/system/src:ro")
                 fi
-                if [ -d "../lalr1/src" ]; then
-                    VOLUMES+=("-v" "../lalr1/src:/app/vendor/davekok/lalr1/src:ro")
+                if [ -d "../kernel/src" ]; then
+                    VOLUMES+=("-v" "../kernel/src:/app/vendor/davekok/kernel/src:ro")
+                fi
+                if [ -d "../parser/src" ]; then
+                    VOLUMES+=("-v" "../parser/src:/app/vendor/davekok/parser/src:ro")
                 fi
                 ;;
         esac

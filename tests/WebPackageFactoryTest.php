@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace davekok\webpackage\tests;
 
-use davekok\lalr1\Parser;
-use davekok\stream\Activity;
+use davekok\parser\Parser;
+use davekok\kernel\Activity;
 use davekok\webpackage\WebPackageFactory;
 use davekok\webpackage\WebPackageRules;
 use davekok\webpackage\WebPackageReader;

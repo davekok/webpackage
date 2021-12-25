@@ -21,16 +21,21 @@
     "repositories": [
         {
             "type": "vcs",
+            "url": "https://github.com/davekok/system"
+        },
+        {
+            "type": "vcs",
             "url": "https://github.com/davekok/kernel"
         },
         {
             "type": "vcs",
-            "url": "https://github.com/davekok/lalr1"
+            "url": "https://github.com/davekok/parser"
         }
     ],
     "require": {
+        "davekok/system": "dev-main",
         "davekok/kernel": "dev-main",
-        "davekok/lalr1": "dev-main"
+        "davekok/parser": "dev-main"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5",

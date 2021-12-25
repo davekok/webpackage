@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace davekok\webpackage;
 
-use davekok\lalr1\attributes\{Rule,Symbol,Symbols};
-use davekok\lalr1\{Parser,ParserException,Rules,SymbolType,Token};
+use davekok\parser\attributes\{Rule,Symbol,Symbols};
+use davekok\parser\{Parser,ParserException,Rules,SymbolType,Token};
 use Throwable;
 
 #[Symbols(
